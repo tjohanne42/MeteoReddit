@@ -17,4 +17,6 @@ Ces données correctement récupérées, traitées et nettoyées devront ensuite
 
 # How to use
 
-sh autorun.sh
+python3 reddit.py
+python3 meteo.py
+python3 analyse.py
