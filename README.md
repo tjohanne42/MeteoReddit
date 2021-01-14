@@ -2,7 +2,7 @@
 
 # Nicolas Jeffrey Théo
 
-#Contexte du projet
+# Contexte du projet
 Vous faites partie d’une équipe de data scientists au sein d’une entreprise de vente de composants informatiques aux particuliers (B2C). Votre communication passe principalement par la publication de contenu sur les réseaux sociaux, en particulier Reddit.
 
 Cependant, les responsables communication ont fait remonter leurs interrogations quant à la date de parution de certains contenus, qui semble avoir un impact sur le nombre de vues et de commentaires postés. On soupçonnerait presque les amateurs de matériel informatique de sortir dehors les jours de beau temps.
