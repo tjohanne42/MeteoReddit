@@ -15,8 +15,14 @@ Ensuite, on pourra s’attaquer à la récupération du niveau de suivi des publ
 
 Ces données correctement récupérées, traitées et nettoyées devront ensuite être mises en relation, afin de mettre en évidence la présence d’une éventuelle corrélation.
 
-# How to use
+# Première étude
 
-python3 reddit.py
-python3 meteo.py
-python3 analyse.py
+Première étude sur les mercredi tech de r/france:
+
+reddit.py / meteo.py / analyse.py / analyse.ipynb
+
+# Deuxième étude
+
+Deuxième étude sur tous les posts trouvés en recherchant r/france:
+
+france_reddit.py / 2020_meteo.py / analyse2.ipynb
