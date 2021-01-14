@@ -14,3 +14,7 @@ Cheminement: La première étape consiste en la récupération des données mét
 Ensuite, on pourra s’attaquer à la récupération du niveau de suivi des publications sur Reddit. On pourra s’intéresser par exemple au nombre de votes, au nombre de commentaires, à la durée de présence sur la première page, etc.
 
 Ces données correctement récupérées, traitées et nettoyées devront ensuite être mises en relation, afin de mettre en évidence la présence d’une éventuelle corrélation.
+
+# How to use
+
+sh autorun.sh
