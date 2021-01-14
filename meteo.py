@@ -18,22 +18,46 @@ def user_agent():
 	return tab[random.randint(0, len(tab) - 1)]
 
 def init_selenium():
+	# chose a user agent
 	useragent = user_agent()
 	firefoxOptions = Options()
+	# select headless option
 	firefoxOptions.add_argument("-headless")
 	profile = webdriver.FirefoxProfile()
 	profile.set_preference("general.useragent.override", useragent)
+	# try to load geckodriver
 	try:
 		browser = webdriver.Firefox(firefox_profile=profile, executable_path="geckodriver", options=firefoxOptions)
 	except:
+		# if geckodriver fails, try to add it to PATH
 		print("selenium is not configure with geckodriver")
-		exit()
+		done = False
+		while not done:
+			try:
+				x = str(input("you must add geckodriver to your PATH, we can do it for you\ny/n\n"))
+				if x == "y":
+					path = os.getcwd() + "/bin"
+					os.system("set PATH=%PATH%;" + path)
+					os.system(f'export PATH="$' + path + ':$PATH"')
+					done = True
+				elif x == "n":
+					exit()
+			except:
+				pass
+		try:
+			# retry to load geckodriver
+			browser = webdriver.Firefox(firefox_profile=profile, executable_path="geckodriver", options=firefoxOptions)
+		except:
+			print("an error occured")
+			exit()
+	# atexit we unload geckodriver
 	atexit.register(browser.quit)
 	return browser
 
 def get_soup_weather_underground(browser, url, time_wait=5, fails_max=5, display=False):
 	fails = 0
 	done = False
+	# load the url with selenium while we can't access to htlm loaded with js
 	while not done:
 		if display:
 			print(f"loading {url} ...")
@@ -58,13 +82,13 @@ def get_soup_weather_underground(browser, url, time_wait=5, fails_max=5, display
 				print("fail")
 				print(f"waiting {delay} sec until next attempt")
 			time.sleep(delay)
-	
 	if display:
 		print("success")
 	return soup
 
 
 def scrap_meteo_from_url(browser, date, url, display=False):
+	# getting the soup from the url
 	soup = get_soup_weather_underground(browser, url, display=display)
 	dic = 	{
 			"date": [],
@@ -75,6 +99,7 @@ def scrap_meteo_from_url(browser, date, url, display=False):
 			}
 	tab = soup.find("tbody", attrs={"role":"rowgroup"})
 	rows = tab.find_all("tr", attrs={"role":"row"})
+	# saving the meteo data in dic
 	for row in rows:
 		columns = row.find_all("td")
 		i = 0
@@ -95,16 +120,19 @@ def scrap_meteo_from_url(browser, date, url, display=False):
 				cond = columns[i].find("span", attrs={"class":"ng-star-inserted"})
 				dic["condition"].append(cond.text)
 			i += 1
+	# create df from dic
 	df = pd.DataFrame(data=dic)
 	return df
 
 def scrap_meteo_from_date(browser, date, display=False):
+	# getting meteo data for 4 locations in France
 	orly_url = "https://www.wunderground.com/history/daily/fr/paray-vieille-poste/LFPO/date/" + date
 	toulon_url = "https://www.wunderground.com/history/daily/fr/hy%C3%A8res/LFTH/date/" + date
 	strasbourg_url = "https://www.wunderground.com/history/daily/fr/entzheim/LFST/date/" + date
 	pleurtuit_url = "https://www.wunderground.com/history/daily/fr/pleurtuit/LFRD/date/" + date
 	dfs = []
 
+	# concurrent future threadpoolexecutor makes our four scrap silmutanuous
 	f1 = concurrent.futures.ThreadPoolExecutor().submit(scrap_meteo_from_url, browser, date, toulon_url, display)
 	time.sleep(random.uniform(0.5, 1.5))
 
@@ -116,10 +144,12 @@ def scrap_meteo_from_date(browser, date, display=False):
 
 	f4 = concurrent.futures.ThreadPoolExecutor().submit(scrap_meteo_from_url, browser, date, orly_url, display)
 
+	# save meteo data of the four location in a df
 	df = pd.concat([f1.result(), f2.result(), f3.result(), f4.result()], ignore_index=True)
 	return df
 
 def scrap_meteo_from_dates(browser, dates, display=False):
+	# getting df of meteo data for all dates
 	dfs = []
 	for date in dates:
 		dfs.append(scrap_meteo_from_date(browser, date, display))
@@ -128,16 +158,16 @@ def scrap_meteo_from_dates(browser, dates, display=False):
 time_temp = time.time()
 browser = init_selenium()
 
+# load reddit data
 path = "csv"
-
 try:
-    listdir = os.listdir(path)
+	df_reddit = pd.read_csv(path + "/all_reddit.csv")
 except:
-    os.mkdir(path)
-
-df_reddit = pd.read_csv(path + "/all_reddit.csv")
+	print("no reddit data fount in", path)
+	exit()
 dates = df_reddit["date"]
 
+# scrap meteo for each subreddit in the csv
 dfs = scrap_meteo_from_dates(browser, dates, display=True)
 
 dic = 	{
@@ -147,6 +177,7 @@ dic = 	{
 		"condition":[]
 		}
 
+# making average of data collected
 for df in dfs:
 	dic["date"].append(df["date"][0])
 	dic["temperature C"].append(df["temperature"].mean())
@@ -155,6 +186,9 @@ for df in dfs:
 
 print(f"\ndone in {time.time() - time_temp} sec")
 
+# save data in csv
 df_avg = pd.DataFrame(data=dic)
 df_avg.to_csv(path + '/meteo_avg.csv', index=False)
 print(df_avg)
+
+print("save done in{" + path + "/mete_avg.csv}")

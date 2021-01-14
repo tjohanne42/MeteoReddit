@@ -17,32 +17,51 @@ def user_agent():
 	return tab[random.randint(0, len(tab) - 1)]
 
 def init_selenium():
+	# chose a user agent
 	useragent = user_agent()
 	firefoxOptions = Options()
+	# select headless option
 	firefoxOptions.add_argument("-headless")
 	profile = webdriver.FirefoxProfile()
 	profile.set_preference("general.useragent.override", useragent)
+	# try to load geckodriver
 	try:
 		browser = webdriver.Firefox(firefox_profile=profile, executable_path="geckodriver", options=firefoxOptions)
 	except:
+		# if geckodriver fails, try to add it to PATH
 		print("selenium is not configure with geckodriver")
-		exit()
+		done = False
+		while not done:
+			try:
+				x = str(input("you must add geckodriver to your PATH, we can do it for you\ny/n\n"))
+				if x == "y":
+					path = os.getcwd() + "/bin"
+					os.system("set PATH=%PATH%;" + path)
+					os.system(f'export PATH="$' + path + ':$PATH"')
+					done = True
+				elif x == "n":
+					exit()
+			except:
+				pass
+		try:
+			# retry to load geckodriver
+			browser = webdriver.Firefox(firefox_profile=profile, executable_path="geckodriver", options=firefoxOptions)
+		except:
+			print("an error occured")
+			exit()
+	# atexit we unload geckodriver
 	atexit.register(browser.quit)
 	return browser
 
 def webscroll():
-	
 	SCROLL_PAUSE_TIME = 2
 	# Get scroll height
 	last_height = browser.execute_script("return document.body.scrollHeight")
-
 	while True:
 		# Scroll down to bottom
 		browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
 		# Wait to load page
 		time.sleep(SCROLL_PAUSE_TIME)
-
 		# Calculate new scroll height and compare with last scroll height
 		new_height = browser.execute_script("return document.body.scrollHeight")
 		if new_height == last_height:
@@ -52,17 +71,26 @@ def webscroll():
 browser = init_selenium()
 url = "https://www.reddit.com/r/france/search/?q=Mercredi%2BTech&sort=new&restrict_sr=on&type=link"
 
+# getting all div of subreddit of a research on reddit
+# try to get it 5 times so get the good numbers of div
+attempts = 0
 done = False
+max_len = 0
 while not done:
 	browser.get(url)
 	webscroll()
 	soup = BeautifulSoup(browser.page_source, 'lxml')
 	blbl = soup.find_all("div", attrs={"class":"_1Y6dfr4zLlrygH-FLmr8x-"})
-	if len(blbl) >= 83:
-		done = True
-	else:
-		print(f"only {len(blbl)} loaded")
+	if attempts >= 5:
+		if len(blbl) >= max_len:
+			done = True
+	elif len(blbl) > max_len:
+		max_len = len(blbl)
+	attempts += 1
+	print("attempt", attempts)
 
+# for each div we get the link to the subreddit
+# only get link from "mercredi tech" subreddit
 links = []
 for x in blbl:
 	not_valid = False
@@ -78,6 +106,8 @@ for x in blbl:
 
 print(f"loading links done: {len(links)}")
 
+
+# init praw to scrap reddit
 reddit = praw.Reddit(client_id='xuvYAAO_XUjgAw', 
 					 client_secret='gVbYLagT4DIjBmEv1ovqhUuQ1hgQTA', 
 					 user_agent='soupy1', 
@@ -91,9 +121,9 @@ sub =   {
         "nb com": []
         }
 
-dfs = []
-
 x = 0
+# for each link we get date name score and nb com
+# only get info on links from chuckMauriceFacts user
 for link in links:
     submission = reddit.submission(url=link)
     if submission.author != "ChuckMauriceFacts":
@@ -126,18 +156,16 @@ for link in links:
     print(f"link {x} done")
     x += 1
 
+# save datas in csv
 path = "csv"
-
 try:
     listdir = os.listdir(path)
 except:
     os.mkdir(path)
-
 try:
     listdir = os.listdir(path + "/comment_reddit")
 except:
     os.mkdir(path + "/comment_reddit")
-
 df_sub = pd.DataFrame(data=sub)
 print(df_sub)
 df_sub.to_csv(path + "/all_reddit.csv", index=False)
@@ -145,3 +173,5 @@ x = 0
 for df in dfs:
     df.to_csv(path + "/comment_reddit/" + sub["name"][x] + ".csv", index=False)
     x += 1
+
+print("save done in{" + path + "/all_reddit.csv}")
