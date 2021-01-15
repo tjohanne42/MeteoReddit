@@ -26,3 +26,7 @@ reddit.py / meteo.py / analyse.py / analyse.ipynb
 Deuxième étude sur tous les posts trouvés en recherchant r/france:
 
 france_reddit.py / 2020_meteo.py / analyse2.ipynb
+
+# Powerpoint
+
+https://docs.google.com/presentation/d/1YAK3WxJVcQY6zZJmLFLLgQ5S9G9SyRX5eFRa3yTCFj0/edit?ts=60005033#slide=id.gaf7ac20651_0_12
